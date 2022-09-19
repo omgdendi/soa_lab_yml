@@ -1,0 +1,250 @@
+openapi: 3.0.1
+info:
+  title: SOA Lab API
+  description: |-
+    Сервис-ориентированная архитектура. Лабораторная 1
+  version: 1.0.0
+  license:
+    name: Report link
+tags:
+  - name: Операции с билетами
+    description: Операции с билетами
+servers:
+  - url: https://se.ifmo.ru/~s285577/api/shop/booking
+paths:
+  /sell/{ticket-id}/{person-id}/{price}:
+    put:
+      tags:
+        - Операции с билетами
+      summary: Продать билет за указанную сумму
+      operationId: sellTicket
+      parameters:
+        - name: ticket-id
+          in: path
+          description: id билета
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: person-id
+          in: path
+          description: id человека
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: price
+          in: path
+          description: цена билета
+          required: true
+          schema:
+            type: integer
+            format: int32    
+      responses:
+        '200':
+          description: Билет продан
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TicketDTO'
+        '400':
+          description: Неправильные параметры запроса
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'        
+        '404':
+          description: Билет или человек с таким ID не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+                
+  /sell/discount/{ticket-id}/{person-id}/{discount}:                
+    post:
+      tags:
+        - Операции с билетами
+      summary: создать новый билет на основе указанного, указав скидку в заданное число %, и, одновременно, увеличив цену билета на ту же самую сумму
+      operationId: createCopyTicket
+      parameters:
+        - name: ticket-id
+          in: path
+          description: id билета
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: person-id
+          in: path
+          description: id человека
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: discount
+          in: path
+          description: скидка
+          required: true
+          schema:
+            type: integer
+            format: int32
+            example: 20
+      responses:
+        '200':
+          description: Билет создан
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TicketDTO'
+        '400':
+          description: Неправильные параметры запроса
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'        
+        '404':
+          description: Билет или человек с таким ID не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'          
+                
+components:
+  schemas:
+    AddressDTO:
+      required:
+        - street
+        - town
+      type: object
+      properties:
+        street:
+          type: string
+          example: "Пушкина"
+        zipCode:
+          type: string
+          example: "Дом колотушкина"
+        town:
+          $ref: '#/components/schemas/LocationDTO'
+      xml:
+        name: address
+    CoordinatesDTO:
+      required:
+        - x
+      type: object
+      properties:
+        x:
+          minimum: -384
+          type: integer
+          format: int64
+          example: 1
+        'y':
+          minimum: -955
+          type: number
+          format: double
+          example: 1
+      xml:
+        name: coordinates
+    LocationDTO:
+      required:
+        - 'y'
+        - z
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          example: 1
+        'y':
+          type: integer
+          format: int64
+          example: 1
+        z:
+          type: number
+          format: float
+          example: 1
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "Хайп Парк"
+      xml:
+        name: location
+    TicketDTO:
+      required:
+        - coordinates
+        - discount
+        - name
+        - venue
+      type: object
+      properties:
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "ITMO-fest"
+        coordinates:
+          $ref: '#/components/schemas/CoordinatesDTO'
+        price:
+          minimum: 0
+          type: number
+          format: double
+          example: 1000
+        discount:
+          maximum: 100
+          minimum: 0
+          type: integer
+          format: int32
+          example: 20
+        type:
+          type: string
+          enum:
+            - VIP
+            - USUAL
+            - BUDGETARY
+            - CHEAP
+          example: VIP
+        venue:
+          $ref: '#/components/schemas/VenueDTO'
+      xml:
+        name: ticket
+    VenueDTO:
+      required:
+        - capacity
+        - name
+      type: object
+      properties:
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "Хайп парк"
+        capacity:
+          minimum: 0
+          type: integer
+          format: int32
+          example: 5000
+        type:
+          type: string
+          enum:
+            - BAR
+            - LOFT
+            - CINEMA
+            - MALL
+            - STADIUM
+          example: STADIUM
+        address:
+          $ref: '#/components/schemas/AddressDTO'
+      xml:
+        name: venue
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: '##default'

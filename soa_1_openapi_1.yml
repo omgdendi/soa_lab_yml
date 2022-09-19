@@ -1,0 +1,400 @@
+openapi: 3.0.1
+info:
+  title: SOA Lab API
+  description: |-
+    Сервис-ориентированная архитектура. Лабораторная 1
+  version: 1.0.0
+  license:
+    name: Report link
+tags:
+  - name: Билеты
+    description: Управление билетами
+  - name: Дополнительно
+servers:
+  - url: https://se.ifmo.ru/~s285577/api/shop
+paths:
+  /tickets/{id}:
+    get:
+      tags:
+        - Билеты
+      summary: Получить билет по id
+      operationId: getTicket
+      parameters:
+        - name: id
+          in: path
+          description: id билета
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Билет найден
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TicketDTO'
+        '404':
+          description: Билет с таким ID не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    put:
+      tags:
+        - Билеты
+      summary: Обновить данные билета по id
+      operationId: updateTicket
+      parameters:
+        - name: id
+          in: path
+          description: id билета
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/TicketDTO'
+        required: true
+      responses:
+        '200':
+          description: Билет обновлен
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TicketDTO'
+        '401':
+          description: Неправильные параметры запроса
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Билет с таким ID не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    delete:
+      tags:
+        - Билеты
+      summary: Удалить билет по id
+      operationId: removeTicket
+      parameters:
+        - name: id
+          in: path
+          description: id билета
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Билет удален
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Билет с таким ID не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+  /tickets:
+    get:
+      tags:
+        - Билеты
+      summary: Получить все билеты
+      operationId: getAllTickets
+      parameters:
+        - name: size
+          in: query
+          description: Установить размер страницы
+          explode: true
+          schema:
+            type: string
+            default: 20
+        - name: page
+          in: query
+          description: Установить номер страницы
+          explode: true
+          schema:
+            type: string
+            default: 1
+        - name: sort
+          in: query
+          description: Установить правило для фильтра
+          explode: true
+          schema:
+            type: array
+            items: 
+              type: string
+              maxItems: 1
+              enum: [name, coordinates_x, coordinates_y, creationDate, price, discount, type, venue_name, venue_capacity, venue_type, address_street, address_zip_code, location_x, location_y, location_name]
+        - name: asceding
+          in: query
+          description: Установить правило для соритировки
+          explode: true
+          schema:
+            type: boolean
+        - name: filter
+          in: query
+          description: Установить строку фильтра
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Билеты найдены
+          content:
+            application/xml:
+              schema:
+                type: array
+                xml: 
+                  name: tickets
+                  wrapped: true
+                items:
+                  $ref: '#/components/schemas/TicketDTO'
+    post:
+      tags:
+        - Билеты
+      summary: Создать билет
+      operationId: createTicket
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/TicketDTO'
+        required: true
+      responses:
+        '200':
+          description: Билет создан
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TicketDTO'
+        '401':
+          description: Неправильные параметры запроса
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+                
+  /tickets/additional:
+    delete:
+      tags:
+        - Дополнительно
+      summary: Удалить один билет, значение поля type которого эквивалентно заданному
+      operationId: deleteTicketByType
+      parameters:
+        - name: type
+          in: query
+          description: тип билета
+          required: true
+          schema:
+            type: string
+            enum: 
+              - VIP
+              - USUAL
+              - BUDGETARY
+              - CHEAP
+            
+      responses:
+        '200':
+          description: Билет удален
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          description: Билет с таким типом не найден
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+    get:
+      tags:
+        - Дополнительно
+      summary: Вернуть массив уникальных значений типов по всем билетам
+      operationId: getUniqTypes
+      responses:
+        '200':
+          description: массив уникальных значений типов по всем билетам
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TypeEnumResponse'
+  /tickets/additional/sum:
+    get:
+      tags:
+        - Дополнительно
+      summary: Рассчитать суммарную цену всех билетов
+      operationId: getAllSumFromTickets
+      responses:
+        '200':
+          description: Суммарная цена всех билетов
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+                
+components:
+  schemas:
+    AddressDTO:
+      required:
+        - street
+        - town
+      type: object
+      properties:
+        street:
+          type: string
+          example: "Пушкина"
+        zipCode:
+          type: string
+          example: "Дом колотушкина"
+        town:
+          $ref: '#/components/schemas/LocationDTO'
+      xml:
+        name: address
+    CoordinatesDTO:
+      required:
+        - x
+      type: object
+      properties:
+        x:
+          minimum: -384
+          type: integer
+          format: int64
+          example: 1
+        'y':
+          minimum: -955
+          type: number
+          format: double
+          example: 1
+      xml:
+        name: coordinates
+    LocationDTO:
+      required:
+        - 'y'
+        - z
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          example: 1
+        'y':
+          type: integer
+          format: int64
+          example: 1
+        z:
+          type: number
+          format: float
+          example: 1
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "Хайп Парк"
+      xml:
+        name: location
+    TicketDTO:
+      required:
+        - coordinates
+        - discount
+        - name
+        - venue
+      type: object
+      properties:
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "ITMO-fest"
+        coordinates:
+          $ref: '#/components/schemas/CoordinatesDTO'
+        price:
+          minimum: 0
+          type: number
+          format: double
+          example: 1000
+        discount:
+          maximum: 100
+          minimum: 0
+          type: integer
+          format: int32
+          example: 20
+        type:
+          type: string
+          enum:
+            - VIP
+            - USUAL
+            - BUDGETARY
+            - CHEAP
+          example: VIP
+        venue:
+          $ref: '#/components/schemas/VenueDTO'
+      xml:
+        name: ticket
+    VenueDTO:
+      required:
+        - capacity
+        - name
+      type: object
+      properties:
+        name:
+          maxLength: 2147483647
+          minLength: 1
+          type: string
+          example: "Хайп парк"
+        capacity:
+          minimum: 0
+          type: integer
+          format: int32
+          example: 5000
+        type:
+          type: string
+          enum:
+            - BAR
+            - LOFT
+            - CINEMA
+            - MALL
+            - STADIUM
+          example: STADIUM
+        address:
+          $ref: '#/components/schemas/AddressDTO'
+      xml:
+        name: venue
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: api
+    TypeEnumResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - BAR
+            - LOFT
+            - CINEMA
+            - MALL
+            - STADIUM
+          example: VIP
+      xml:
+        name: type    
+        
